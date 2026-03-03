@@ -3,7 +3,6 @@ import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:provider/provider.dart';
 import '../../providers/listing_provider.dart';
-import '../../models/listing.dart';
 import 'listing_detail_screen.dart';
 
 class MapViewScreen extends StatefulWidget {
@@ -67,11 +66,12 @@ class _MapViewScreenState extends State<MapViewScreen> {
                         boxShadow: [
                           BoxShadow(
                             color: Colors.black.withOpacity(0.2),
-                            blurRadius: 6,
+                            blurRadius: 8,
                             offset: const Offset(0, 3),
                           ),
                         ],
                       ),
+                      padding: const EdgeInsets.all(2),
                       child: Icon(
                         Icons.location_on,
                         color: _getMarkerColor(l.category),
@@ -98,31 +98,46 @@ class _MapViewScreenState extends State<MapViewScreen> {
               );
             },
           ),
-          // Floated Gradient Header
+          // Floated Header with Background Image
           Positioned(
             top: 0,
             left: 0,
             right: 0,
             child: Container(
               height: 120,
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  begin: Alignment.topCenter,
-                  end: Alignment.bottomCenter,
-                  colors: [
-                    const Color(0xFF1E3A8A).withOpacity(0.9),
-                    const Color(0xFF1E3A8A).withOpacity(0.0),
-                  ],
-                ),
-              ),
-              padding: const EdgeInsets.only(top: 50, left: 20),
-              child: const Text(
-                'Map View',
-                style: TextStyle(
-                  fontSize: 24,
-                  fontWeight: FontWeight.bold,
-                  color: Colors.white,
-                ),
+              child: Stack(
+                fit: StackFit.expand,
+                children: [
+                  Image.asset(
+                    'assets/images/kigali_convention_night.png',
+                    fit: BoxFit.cover,
+                  ),
+                  Container(
+                    decoration: BoxDecoration(
+                      gradient: LinearGradient(
+                        begin: Alignment.topCenter,
+                        end: Alignment.bottomCenter,
+                        colors: [
+                          Colors.black.withOpacity(0.6),
+                          Colors.black.withOpacity(0.0),
+                        ],
+                      ),
+                    ),
+                  ),
+                  const Center(
+                    child: Padding(
+                      padding: EdgeInsets.only(top: 30),
+                      child: Text(
+                        'Map View',
+                        style: TextStyle(
+                          fontSize: 24,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.white,
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
               ),
             ),
           ),

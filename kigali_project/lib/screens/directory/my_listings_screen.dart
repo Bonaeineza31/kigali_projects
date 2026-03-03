@@ -24,19 +24,29 @@ class MyListingsScreen extends StatelessWidget {
             floating: false,
             pinned: true,
             flexibleSpace: FlexibleSpaceBar(
+              centerTitle: true,
               title: const Text('My Listings', 
                 style: TextStyle(fontWeight: FontWeight.bold, color: Colors.white)),
-              background: Container(
-                decoration: const BoxDecoration(
-                  gradient: LinearGradient(
-                    colors: [Color(0xFF1E3A8A), Color(0xFF3B82F6)],
-                    begin: Alignment.topLeft,
-                    end: Alignment.bottomRight,
+              background: Stack(
+                fit: StackFit.expand,
+                children: [
+                  Image.asset(
+                    'assets/images/kigali_convention_night.png',
+                    fit: BoxFit.cover,
                   ),
-                ),
-                child: Center(
-                  child: Icon(Icons.list_alt, size: 80, color: Colors.white.withOpacity(0.2)),
-                ),
+                  Container(
+                    decoration: BoxDecoration(
+                      gradient: LinearGradient(
+                        begin: Alignment.topCenter,
+                        end: Alignment.bottomCenter,
+                        colors: [
+                          Colors.black.withOpacity(0.3),
+                          Colors.black.withOpacity(0.7),
+                        ],
+                      ),
+                    ),
+                  ),
+                ],
               ),
             ),
             actions: [
