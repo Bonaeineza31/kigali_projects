@@ -32,62 +32,101 @@ class _MapViewScreenState extends State<MapViewScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Map View', style: TextStyle(fontWeight: FontWeight.bold)),
-        backgroundColor: Colors.white,
-        foregroundColor: const Color(0xFF1E3A8A),
-        elevation: 0,
-      ),
-      body: Consumer<ListingProvider>(
-        builder: (context, provider, child) {
-          if (provider.isLoading) {
-            return const Center(child: CircularProgressIndicator());
-          }
+      body: Stack(
+        children: [
+          Consumer<ListingProvider>(
+            builder: (context, provider, child) {
+              if (provider.isLoading) {
+                return const Center(child: CircularProgressIndicator());
+              }
 
-          if (provider.errorMessage != null) {
-            return Center(child: Text('Error: ${provider.errorMessage}', style: const TextStyle(color: Colors.red)));
-          }
+              if (provider.errorMessage != null) {
+                return Center(child: Text('Error: ${provider.errorMessage}', style: const TextStyle(color: Colors.red)));
+              }
 
-          final listings = provider.listings;
-          
-          final markers = listings.map((l) {
-            return Marker(
-              width: 40.0,
-              height: 40.0,
-              point: LatLng(l.lat, l.lng),
-              child: GestureDetector(
-                onTap: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (context) => ListingDetailScreen(listing: l),
+              final listings = provider.listings;
+              
+              final markers = listings.map((l) {
+                return Marker(
+                  width: 45.0,
+                  height: 45.0,
+                  point: LatLng(l.lat, l.lng),
+                  child: GestureDetector(
+                    onTap: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => ListingDetailScreen(listing: l),
+                        ),
+                      );
+                    },
+                    child: Container(
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        shape: BoxShape.circle,
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withOpacity(0.2),
+                            blurRadius: 6,
+                            offset: const Offset(0, 3),
+                          ),
+                        ],
+                      ),
+                      child: Icon(
+                        Icons.location_on,
+                        color: _getMarkerColor(l.category),
+                        size: 30,
+                      ),
                     ),
-                  );
-                },
-                child: Icon(
-                  Icons.location_on,
-                  color: _getMarkerColor(l.category),
-                  size: 40,
+                  ),
+                );
+              }).toList();
+
+              return FlutterMap(
+                mapController: _mapController,
+                options: MapOptions(
+                  initialCenter: _initialPosition,
+                  initialZoom: 13,
+                ),
+                children: [
+                  TileLayer(
+                    urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
+                    userAgentPackageName: 'com.example.kigali_project',
+                  ),
+                  MarkerLayer(markers: markers),
+                ],
+              );
+            },
+          ),
+          // Floated Gradient Header
+          Positioned(
+            top: 0,
+            left: 0,
+            right: 0,
+            child: Container(
+              height: 120,
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  begin: Alignment.topCenter,
+                  end: Alignment.bottomCenter,
+                  colors: [
+                    const Color(0xFF1E3A8A).withOpacity(0.9),
+                    const Color(0xFF1E3A8A).withOpacity(0.0),
+                  ],
                 ),
               ),
-            );
-          }).toList();
-
-          return FlutterMap(
-            mapController: _mapController,
-            options: MapOptions(
-              initialCenter: _initialPosition,
-              initialZoom: 13,
-            ),
-            children: [
-              TileLayer(
-                urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
-                userAgentPackageName: 'com.example.kigali_project',
+              padding: const EdgeInsets.only(top: 50, left: 20),
+              child: const Text(
+                'Map View',
+                style: TextStyle(
+                  fontSize: 24,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.white,
+                ),
               ),
-              MarkerLayer(markers: markers),
-            ],
-          );
-        },
+            ),
+          ),
+        ],
       ),
     );
   }

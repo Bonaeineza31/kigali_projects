@@ -24,102 +24,161 @@ class DirectoryScreen extends StatelessWidget {
 
     return Scaffold(
       backgroundColor: Colors.grey[50],
-      appBar: AppBar(
-        title: const Text('Explore Kigali', style: TextStyle(fontWeight: FontWeight.bold)),
-        backgroundColor: Colors.white,
-        foregroundColor: const Color(0xFF1E3A8A),
-        elevation: 0,
-        centerTitle: false,
-      ),
-      body: Column(
-        children: [
-          // Search Bar
-          Padding(
-            padding: const EdgeInsets.all(20.0),
-            child: TextField(
-              onChanged: (value) => listingProvider.setSearchQuery(value),
-              decoration: InputDecoration(
-                hintText: 'Search for services or places...',
-                prefixIcon: const Icon(Icons.search, color: Color(0xFF1E3A8A)),
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(15),
-                  borderSide: BorderSide.none,
+      body: CustomScrollView(
+        slivers: [
+          SliverAppBar(
+            expandedHeight: 180,
+            floating: false,
+            pinned: true,
+            flexibleSpace: FlexibleSpaceBar(
+              title: const Text('Explore Kigali', 
+                style: TextStyle(fontWeight: FontWeight.bold, color: Colors.white)),
+              background: Container(
+                decoration: const BoxDecoration(
+                  gradient: LinearGradient(
+                    colors: [Color(0xFF1E3A8A), Color(0xFF3B82F6)],
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                  ),
                 ),
-                filled: true,
-                fillColor: Colors.white,
-                contentPadding: const EdgeInsets.symmetric(vertical: 15),
+                child: Stack(
+                  children: [
+                    Positioned(
+                      right: -20,
+                      top: -20,
+                      child: Icon(Icons.location_city, size: 150, color: Colors.white.withOpacity(0.1)),
+                    ),
+                  ],
+                ),
               ),
             ),
+            actions: [
+              IconButton(
+                icon: const Icon(Icons.bookmark_border, color: Colors.white),
+                onPressed: () {
+                  listingProvider.setCategory('Bookmarked');
+                },
+              ),
+            ],
           ),
-          // Category Filter
-          SizedBox(
-            height: 45,
-            child: ListView.builder(
-              scrollDirection: Axis.horizontal,
-              padding: const EdgeInsets.symmetric(horizontal: 16),
-              itemCount: _categories.length,
-              itemBuilder: (context, index) {
-                final category = _categories[index];
-                final isSelected = listingProvider.selectedCategory == category;
-                return Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 4),
-                  child: FilterChip(
-                    label: Text(category),
-                    selected: isSelected,
-                    onSelected: (selected) {
-                      listingProvider.setCategory(category);
-                    },
-                    backgroundColor: Colors.white,
-                    selectedColor: const Color(0xFF1E3A8A),
-                    labelStyle: TextStyle(
-                      color: isSelected ? Colors.white : Colors.black87,
-                      fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+          SliverToBoxAdapter(
+            child: Column(
+              children: [
+                // Search Bar
+                Padding(
+                  padding: const EdgeInsets.all(20.0),
+                  child: Container(
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(15),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withOpacity(0.05),
+                          blurRadius: 10,
+                          offset: const Offset(0, 4),
+                        ),
+                      ],
                     ),
-                    checkmarkColor: Colors.white,
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                    child: TextField(
+                      onChanged: (value) => listingProvider.setSearchQuery(value),
+                      decoration: InputDecoration(
+                        hintText: 'Search for services or places...',
+                        prefixIcon: const Icon(Icons.search, color: Color(0xFF1E3A8A)),
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(15),
+                          borderSide: BorderSide.none,
+                        ),
+                        filled: true,
+                        fillColor: Colors.transparent,
+                        contentPadding: const EdgeInsets.symmetric(vertical: 15),
+                      ),
+                    ),
                   ),
-                );
-              },
+                ),
+                // Category Filter
+                SizedBox(
+                  height: 45,
+                  child: ListView.builder(
+                    scrollDirection: Axis.horizontal,
+                    padding: const EdgeInsets.symmetric(horizontal: 16),
+                    itemCount: _categories.length,
+                    itemBuilder: (context, index) {
+                      final category = _categories[index];
+                      final isSelected = listingProvider.selectedCategory == category;
+                      return Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 4),
+                        child: FilterChip(
+                          label: Text(category),
+                          selected: isSelected,
+                          onSelected: (selected) {
+                            listingProvider.setCategory(category);
+                          },
+                          backgroundColor: Colors.white,
+                          selectedColor: const Color(0xFF1E3A8A),
+                          labelStyle: TextStyle(
+                            color: isSelected ? Colors.white : Colors.black87,
+                            fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+                          ),
+                          checkmarkColor: Colors.white,
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                        ),
+                      );
+                    },
+                  ),
+                ),
+                const SizedBox(height: 16),
+              ],
             ),
           ),
-          const SizedBox(height: 16),
           // Listings List
-          Expanded(
-            child: Consumer<ListingProvider>(
-              builder: (context, provider, child) {
-                if (provider.isLoading) {
-                  return const Center(child: CircularProgressIndicator());
-                }
+          Consumer<ListingProvider>(
+            builder: (context, provider, child) {
+              if (provider.isLoading) {
+                return const SliverFillRemaining(child: Center(child: CircularProgressIndicator()));
+              }
 
-                if (provider.errorMessage != null) {
-                  return Center(child: Text('Error: ${provider.errorMessage}', style: const TextStyle(color: Colors.red)));
-                }
+              if (provider.errorMessage != null) {
+                return SliverFillRemaining(
+                  child: Center(child: Text('Error: ${provider.errorMessage}', style: const TextStyle(color: Colors.red)))
+                );
+              }
 
-                final filteredListings = provider.listings;
+              final filteredListings = provider.selectedCategory == 'Bookmarked' 
+                  ? provider.bookmarkedListings 
+                  : provider.listings;
 
-                if (filteredListings.isEmpty) {
-                  return Center(
+              if (filteredListings.isEmpty) {
+                return SliverFillRemaining(
+                  child: Center(
                     child: Column(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        Icon(Icons.search_off, size: 80, color: Colors.grey[300]),
+                        Icon(Icons.search_off, size: 64, color: Colors.grey[400]),
                         const SizedBox(height: 16),
-                        const Text('No places found', style: TextStyle(fontSize: 18, color: Colors.grey)),
+                        Text(
+                          provider.selectedCategory == 'Bookmarked' 
+                            ? 'No bookmarks yet!' 
+                            : 'No listings found',
+                          style: TextStyle(color: Colors.grey[600], fontSize: 16),
+                        ),
                       ],
                     ),
-                  );
-                }
-
-                return ListView.builder(
-                  padding: const EdgeInsets.symmetric(horizontal: 20),
-                  itemCount: filteredListings.length,
-                  itemBuilder: (context, index) {
-                    return ListingCard(listing: filteredListings[index]);
-                  },
+                  ),
                 );
-              },
-            ),
+              }
+
+              return SliverPadding(
+                padding: const EdgeInsets.symmetric(horizontal: 20),
+                sliver: SliverList(
+                  delegate: SliverChildBuilderDelegate(
+                    (context, index) => ListingCard(listing: filteredListings[index]),
+                    childCount: filteredListings.length,
+                  ),
+                ),
+              );
+            },
           ),
+          const SliverToBoxAdapter(child: SizedBox(height: 20)),
         ],
       ),
     );

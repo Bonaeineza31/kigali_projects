@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:url_launcher/url_launcher.dart';
+import 'package:geolocator/geolocator.dart';
 import '../../models/listing.dart';
 
 class ListingDetailScreen extends StatelessWidget {
@@ -9,35 +10,71 @@ class ListingDetailScreen extends StatelessWidget {
 
   const ListingDetailScreen({super.key, required this.listing});
 
-  Future<void> _launchNavigation() async {
-    final url = 'https://www.google.com/maps/search/?api=1&query=${listing.lat},${listing.lng}';
+  Future<void> _launchNavigation(BuildContext context) async {
+    bool serviceEnabled;
+    LocationPermission permission;
+
+    // Test if location services are enabled.
+    serviceEnabled = await Geolocator.isLocationServiceEnabled();
+    if (!serviceEnabled) {
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Location services are disabled.')),
+        );
+      }
+      return;
+    }
+
+    permission = await Geolocator.checkPermission();
+    if (permission == LocationPermission.denied) {
+      permission = await Geolocator.requestPermission();
+      if (permission == LocationPermission.denied) {
+        if (context.mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Location permissions are denied.')),
+          );
+        }
+        return;
+      }
+    }
+    
+    if (permission == LocationPermission.deniedForever) {
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Location permissions are permanently denied.')),
+        );
+      }
+      return;
+    } 
+
+    // Get current position
+    Position position = await Geolocator.getCurrentPosition();
+    
+    // Construct Google Maps URL with origin and destination
+    final url = 'https://www.google.com/maps/dir/?api=1&origin=${position.latitude},${position.longitude}&destination=${listing.lat},${listing.lng}&travelmode=driving';
+    
     if (await canLaunchUrl(Uri.parse(url))) {
-      await launchUrl(Uri.parse(url));
+      await launchUrl(Uri.parse(url), mode: LaunchMode.externalApplication);
     } else {
-      throw 'Could not launch $url';
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Could not launch navigation: $url')),
+        );
+      }
     }
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: Text(listing.name),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.directions),
-            onPressed: _launchNavigation,
-          ),
-        ],
-      ),
-      body: SingleChildScrollView(
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // Map Section
-            SizedBox(
-              height: 300,
-              child: FlutterMap(
+      backgroundColor: Colors.white,
+      body: CustomScrollView(
+        slivers: [
+          SliverAppBar(
+            expandedHeight: 300,
+            pinned: true,
+            flexibleSpace: FlexibleSpaceBar(
+              background: FlutterMap(
                 options: MapOptions(
                   initialCenter: LatLng(listing.lat, listing.lng),
                   initialZoom: 15,
@@ -50,13 +87,13 @@ class ListingDetailScreen extends StatelessWidget {
                   MarkerLayer(
                     markers: [
                       Marker(
-                        width: 40.0,
-                        height: 40.0,
+                        width: 50.0,
+                        height: 50.0,
                         point: LatLng(listing.lat, listing.lng),
                         child: const Icon(
                           Icons.location_on,
                           color: Color(0xFF1E3A8A),
-                          size: 40,
+                          size: 50,
                         ),
                       ),
                     ],
@@ -64,90 +101,100 @@ class ListingDetailScreen extends StatelessWidget {
                 ],
               ),
             ),
-            Padding(
-              padding: const EdgeInsets.all(20.0),
+          ),
+          SliverToBoxAdapter(
+            child: Padding(
+              padding: const EdgeInsets.all(24.0),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      Text(
-                        listing.category,
-                        style: TextStyle(
-                          color: Theme.of(context).colorScheme.primary,
-                          fontWeight: FontWeight.bold,
-                          fontSize: 16,
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFF1E3A8A).withOpacity(0.1),
+                          borderRadius: BorderRadius.circular(10),
                         ),
-                      ),
-                      const Row(
-                        children: [
-                          Icon(Icons.star, color: Colors.amber, size: 20),
-                          Text(' 4.5', style: TextStyle(fontWeight: FontWeight.bold)),
-                        ],
+                        child: Text(
+                          listing.category.toUpperCase(),
+                          style: const TextStyle(
+                            color: Color(0xFF1E3A8A),
+                            fontWeight: FontWeight.bold,
+                            fontSize: 12,
+                            letterSpacing: 1.1,
+                          ),
+                        ),
                       ),
                     ],
                   ),
                   const SizedBox(height: 16),
                   Text(
                     listing.name,
-                    style: const TextStyle(fontSize: 28, fontWeight: FontWeight.bold),
+                    style: const TextStyle(fontSize: 32, fontWeight: FontWeight.bold),
                   ),
-                  const SizedBox(height: 8),
-                  Row(
-                    children: [
-                      const Icon(Icons.location_on, color: Colors.grey, size: 20),
-                      const SizedBox(width: 8),
-                      Expanded(
-                        child: Text(
-                          listing.address,
-                          style: const TextStyle(fontSize: 16, color: Colors.grey),
-                        ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 8),
-                  Row(
-                    children: [
-                      const Icon(Icons.phone, color: Colors.grey, size: 20),
-                      const SizedBox(width: 8),
-                      Text(
-                        listing.contact,
-                        style: const TextStyle(fontSize: 16, color: Colors.grey),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 24),
+                  const SizedBox(height: 20),
+                  _InfoTile(icon: Icons.location_on_outlined, text: listing.address),
+                  const SizedBox(height: 12),
+                  _InfoTile(icon: Icons.phone_outlined, text: listing.contact),
+                  const SizedBox(height: 32),
                   const Text(
-                    'Description',
-                    style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+                    'About this place',
+                    style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
                   ),
-                  const SizedBox(height: 8),
+                  const SizedBox(height: 12),
                   Text(
                     listing.description,
-                    style: const TextStyle(fontSize: 16, height: 1.5),
+                    style: TextStyle(fontSize: 16, height: 1.6, color: Colors.grey[800]),
                   ),
-                  const SizedBox(height: 32),
+                  const SizedBox(height: 40),
                   SizedBox(
                     width: double.infinity,
+                    height: 55,
                     child: ElevatedButton.icon(
-                      onPressed: _launchNavigation,
-                      icon: const Icon(Icons.navigation),
-                      label: const Text('Start Navigation'),
+                      onPressed: () => _launchNavigation(context),
+                      icon: const Icon(Icons.navigation_outlined),
+                      label: const Text('GET DIRECTIONS', style: TextStyle(fontWeight: FontWeight.bold, letterSpacing: 1.2)),
                       style: ElevatedButton.styleFrom(
                         backgroundColor: const Color(0xFF1E3A8A),
                         foregroundColor: Colors.white,
-                        padding: const EdgeInsets.symmetric(vertical: 16),
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
+                        elevation: 5,
+                        shadowColor: const Color(0xFF1E3A8A).withOpacity(0.4),
                       ),
                     ),
                   ),
+                  const SizedBox(height: 20),
                 ],
               ),
             ),
-          ],
-        ),
+          ),
+        ],
       ),
+    );
+  }
+}
+
+class _InfoTile extends StatelessWidget {
+  final IconData icon;
+  final String text;
+
+  const _InfoTile({required this.icon, required this.text});
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      children: [
+        Icon(icon, color: const Color(0xFF3B82F6), size: 22),
+        const SizedBox(width: 12),
+        Expanded(
+          child: Text(
+            text,
+            style: const TextStyle(fontSize: 16, color: Colors.black87),
+          ),
+        ),
+      ],
     );
   }
 }
