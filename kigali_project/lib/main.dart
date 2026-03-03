@@ -33,9 +33,9 @@ class KigaliApp extends StatelessWidget {
       title: 'Kigali City Services',
       theme: ThemeData(
         colorScheme: ColorScheme.fromSeed(
-          seedColor: const Color(0xFF1E3A8A), // Deep Blue
+          seedColor: const Color(0xFF1E3A8A),
           primary: const Color(0xFF1E3A8A),
-          secondary: const Color(0xFFFBBF24), // Vibrant Amber
+          secondary: const Color(0xFFFBBF24),
         ),
         useMaterial3: true,
         fontFamily: 'Roboto',
