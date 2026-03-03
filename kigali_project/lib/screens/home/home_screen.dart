@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import '../providers/listing_provider.dart';
-import '../widgets/listing_card.dart';
-import 'directory_screen.dart';
+import '../../providers/listing_provider.dart';
+import '../../widgets/listing_card.dart';
+import '../directory/directory_screen.dart';
 
 class HomeScreen extends StatelessWidget {
   const HomeScreen({super.key});

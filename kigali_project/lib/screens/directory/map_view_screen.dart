@@ -2,8 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:provider/provider.dart';
-import '../providers/listing_provider.dart';
-import '../models/listing.dart';
+import '../../providers/listing_provider.dart';
+import '../../models/listing.dart';
 import 'listing_detail_screen.dart';
 
 class MapViewScreen extends StatefulWidget {

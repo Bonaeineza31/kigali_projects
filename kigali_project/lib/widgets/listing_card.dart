@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../models/listing.dart';
 import '../providers/listing_provider.dart';
-import '../screens/listing_detail_screen.dart';
+import '../screens/directory/listing_detail_screen.dart';
 
 class ListingCard extends StatelessWidget {
   final Listing listing;

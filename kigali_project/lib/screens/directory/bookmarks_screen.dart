@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import '../providers/listing_provider.dart';
-import '../widgets/listing_card.dart';
+import '../../providers/listing_provider.dart';
+import '../../widgets/listing_card.dart';
 
 class BookmarksScreen extends StatelessWidget {
   const BookmarksScreen({super.key});
