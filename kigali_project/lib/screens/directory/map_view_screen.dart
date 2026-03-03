@@ -40,7 +40,12 @@ class _MapViewScreenState extends State<MapViewScreen> {
               }
 
               if (provider.errorMessage != null) {
-                return Center(child: Text('Error: ${provider.errorMessage}', style: const TextStyle(color: Colors.red)));
+                return Center(
+                  child: Text(
+                    'Error: ${provider.errorMessage}',
+                    style: const TextStyle(color: Colors.red),
+                  ),
+                );
               }
 
               final listings = provider.listings;
@@ -98,46 +103,35 @@ class _MapViewScreenState extends State<MapViewScreen> {
               );
             },
           ),
-          // Floated Header with Background Image
+          // Floated Header with No Background Image
           Positioned(
             top: 0,
             left: 0,
             right: 0,
             child: Container(
               height: 120,
-              child: Stack(
-                fit: StackFit.expand,
-                children: [
-                  Image.asset(
-                    'assets/images/kigali_convention_night.png',
-                    fit: BoxFit.cover,
-                  ),
-                  Container(
-                    decoration: BoxDecoration(
-                      gradient: LinearGradient(
-                        begin: Alignment.topCenter,
-                        end: Alignment.bottomCenter,
-                        colors: [
-                          Colors.black.withOpacity(0.6),
-                          Colors.black.withOpacity(0.0),
-                        ],
-                      ),
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  begin: Alignment.topCenter,
+                  end: Alignment.bottomCenter,
+                  colors: [
+                    const Color(0xFF1E3A8A).withOpacity(0.9),
+                    const Color(0xFF1E3A8A).withOpacity(0.0),
+                  ],
+                ),
+              ),
+              child: const Center(
+                child: Padding(
+                  padding: EdgeInsets.only(top: 30),
+                  child: Text(
+                    'Map View',
+                    style: TextStyle(
+                      fontSize: 24,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.white,
                     ),
                   ),
-                  const Center(
-                    child: Padding(
-                      padding: EdgeInsets.only(top: 30),
-                      child: Text(
-                        'Map View',
-                        style: TextStyle(
-                          fontSize: 24,
-                          fontWeight: FontWeight.bold,
-                          color: Colors.white,
-                        ),
-                      ),
-                    ),
-                  ),
-                ],
+                ),
               ),
             ),
           ),
