@@ -12,11 +12,11 @@ class VerificationScreen extends StatefulWidget {
 
 class _VerificationScreenState extends State<VerificationScreen> {
   Timer? _timer;
+  bool _isResending = false;
 
   @override
   void initState() {
     super.initState();
-    // Periodically check if email is verified
     _timer = Timer.periodic(const Duration(seconds: 3), (_) {
       Provider.of<AuthProvider>(context, listen: false).reloadUser();
     });
@@ -33,35 +33,109 @@ class _VerificationScreenState extends State<VerificationScreen> {
     final authProvider = Provider.of<AuthProvider>(context);
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Verify Email')),
-      body: Padding(
-        padding: const EdgeInsets.all(24.0),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            const Icon(Icons.email_outlined, size: 100, color: Color(0xFF1E3A8A)),
-            const SizedBox(height: 32),
-            const Text(
-              'Verify your email',
-              style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
+      body: Stack(
+        children: [
+          // Background Image
+          Container(
+            decoration: const BoxDecoration(
+              image: DecorationImage(
+                image: AssetImage('assets/images/kigali_convention_night.png'),
+                fit: BoxFit.cover,
+              ),
             ),
-            const SizedBox(height: 16),
-            Text(
-              'A verification email has been sent to ${authProvider.user?.email}. Please check your inbox and verify your email to continue.',
-              textAlign: TextAlign.center,
-              style: const TextStyle(fontSize: 16),
+          ),
+          // Dark Overlay Gradient
+          Container(
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                begin: Alignment.topCenter,
+                end: Alignment.bottomCenter,
+                colors: [
+                  Colors.black.withOpacity(0.4),
+                  Colors.black.withOpacity(0.7),
+                  Colors.black.withOpacity(0.9),
+                ],
+              ),
             ),
-            const SizedBox(height: 32),
-            ElevatedButton(
-              onPressed: () => authProvider.reloadUser(),
-              child: const Text('I have verified my email'),
+          ),
+          // Content
+          SafeArea(
+            child: Center(
+              child: SingleChildScrollView(
+                padding: const EdgeInsets.symmetric(horizontal: 32.0),
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    const Icon(Icons.mark_email_read_outlined, size: 80, color: Colors.white),
+                    const SizedBox(height: 32),
+                    const Text(
+                      'Verify Your Email',
+                      textAlign: TextAlign.center,
+                      style: TextStyle(
+                        fontSize: 32,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.white,
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                    Text(
+                      'We\'ve sent a verification link to:\n${authProvider.user?.email}',
+                      textAlign: TextAlign.center,
+                      style: TextStyle(
+                        fontSize: 16,
+                        color: Colors.white.withOpacity(0.8),
+                      ),
+                    ),
+                    const SizedBox(height: 48),
+                    ElevatedButton(
+                      onPressed: () => authProvider.reloadUser(),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: const Color(0xFF1E3A8A),
+                        foregroundColor: Colors.white,
+                        padding: const EdgeInsets.symmetric(horizontal: 48, vertical: 16),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(30)),
+                        elevation: 8,
+                      ),
+                      child: const Text('I Have Verified', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                    ),
+                    const SizedBox(height: 24),
+                    _isResending
+                        ? const CircularProgressIndicator(color: Colors.white)
+                        : TextButton(
+                            onPressed: () async {
+                              setState(() => _isResending = true);
+                              final success = await authProvider.resendVerificationEmail();
+                              setState(() => _isResending = false);
+                              if (mounted) {
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  SnackBar(
+                                    content: Text(success 
+                                      ? 'Verification email resent!' 
+                                      : 'Failed to resend. Please try again later.'),
+                                    backgroundColor: success ? Colors.green : Colors.red,
+                                  ),
+                                );
+                              }
+                            },
+                            child: const Text(
+                              'Resend Email',
+                              style: TextStyle(color: Colors.white, fontSize: 16),
+                            ),
+                          ),
+                    const SizedBox(height: 16),
+                    TextButton(
+                      onPressed: () => authProvider.logout(),
+                      child: Text(
+                        'Cancel / Logout',
+                        style: TextStyle(color: Colors.white.withOpacity(0.6), fontSize: 14),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
             ),
-            TextButton(
-              onPressed: () => authProvider.logout(),
-              child: const Text('Cancel / Logout'),
-            ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }

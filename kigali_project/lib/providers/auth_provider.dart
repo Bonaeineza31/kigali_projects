@@ -67,4 +67,22 @@ class AuthProvider with ChangeNotifier {
   Future<void> logout() async {
     await _authService.signOut();
   }
+
+  Future<bool> resendVerificationEmail() async {
+    try {
+      await _authService.sendEmailVerification();
+      return true;
+    } catch (e) {
+      return false;
+    }
+  }
+
+  Future<bool> sendPasswordResetEmail(String email) async {
+    try {
+      await _authService.sendPasswordResetEmail(email);
+      return true;
+    } catch (e) {
+      return false;
+    }
+  }
 }

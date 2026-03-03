@@ -61,6 +61,17 @@ class AuthService {
       await _auth.currentUser?.sendEmailVerification();
     } catch (e) {
       print('Error sending verification email: $e');
+      rethrow;
+    }
+  }
+
+  // Send password reset email
+  Future<void> sendPasswordResetEmail(String email) async {
+    try {
+      await _auth.sendPasswordResetEmail(email: email);
+    } catch (e) {
+      print('Error sending password reset email: $e');
+      rethrow;
     }
   }
 
