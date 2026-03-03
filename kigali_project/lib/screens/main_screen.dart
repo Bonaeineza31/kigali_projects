@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'directory_screen.dart';
-import 'my_listings_screen.dart';
-import 'map_view_screen.dart';
-import 'settings_screen.dart';
+import 'directory/directory_screen.dart';
+import 'directory/my_listings_screen.dart';
+import 'directory/map_view_screen.dart';
+import 'settings/settings_screen.dart';
 
 class MainScreen extends StatefulWidget {
   const MainScreen({super.key});
