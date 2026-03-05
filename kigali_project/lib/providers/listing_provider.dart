@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import '../models/listing.dart';
 import '../services/firestore_service.dart';
-import '../services/data_seeder.dart';
 import 'dart:async';
 
 class ListingProvider with ChangeNotifier {
@@ -30,12 +29,6 @@ class ListingProvider with ChangeNotifier {
         _isLoading = false;
         _errorMessage = null;
         
-        // Seed data if empty (using a generic ID or first found user ID)
-        if (_allListings.isEmpty) {
-          // Note: In a real app, you'd pass the actual UID, 
-          // but for seeding static data we just need a creator ID.
-          DataSeeder.seedInitialData('system_admin');
-        }
         
         notifyListeners();
       },
