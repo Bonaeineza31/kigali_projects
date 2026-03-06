@@ -5,8 +5,7 @@ import 'package:url_launcher/url_launcher.dart';
 import 'package:geolocator/geolocator.dart';
 import '../../models/listing.dart';
 
-import 'package:http/http.dart' as http;
-import 'dart:convert';
+import '../../models/listing.dart';
 
 class ListingDetailScreen extends StatefulWidget {
   final Listing listing;
@@ -18,68 +17,12 @@ class ListingDetailScreen extends StatefulWidget {
 }
 
 class _ListingDetailScreenState extends State<ListingDetailScreen> {
-  List<LatLng> _routePoints = [];
   final MapController _mapController = MapController();
   Position? _currentPosition;
 
   @override
   void initState() {
     super.initState();
-    _getAndShowRoute();
-  }
-
-  Future<void> _getAndShowRoute() async {
-    try {
-      // 1. Verify Location Services & Permissions (Essential to prevent crashes)
-      bool serviceEnabled = await Geolocator.isLocationServiceEnabled();
-      if (!serviceEnabled) return;
-
-      LocationPermission permission = await Geolocator.checkPermission();
-      if (permission == LocationPermission.denied) {
-        permission = await Geolocator.requestPermission();
-        if (permission == LocationPermission.denied) return;
-      }
-      
-      if (permission == LocationPermission.deniedForever) return;
-
-      // 2. Get current position
-      _currentPosition = await Geolocator.getCurrentPosition();
-      
-      // 3. Fetch OSRM route
-      final url = Uri.parse(
-        'https://router.project-osrm.org/route/v1/driving/'
-        '${_currentPosition!.longitude},${_currentPosition!.latitude};'
-        '${widget.listing.lng},${widget.listing.lat}'
-        '?overview=full&geometries=geojson'
-      );
-
-      final response = await http.get(url).timeout(const Duration(seconds: 5));
-      if (response.statusCode == 200) {
-        final data = json.decode(response.body);
-        final List coordinates = data['routes'][0]['geometry']['coordinates'];
-        
-        if (mounted) {
-          setState(() {
-            _routePoints = coordinates.map((c) => LatLng(c[1].toDouble(), c[0].toDouble())).toList();
-          });
-        }
-
-        // 4. Update map to show both markers
-        if (_routePoints.isNotEmpty && mounted) {
-           _mapController.fitCamera(
-            CameraFit.bounds(
-              bounds: LatLngBounds.fromPoints([
-                LatLng(_currentPosition!.latitude, _currentPosition!.longitude),
-                LatLng(widget.listing.lat, widget.listing.lng),
-              ]),
-              padding: const EdgeInsets.all(50),
-            ),
-          );
-        }
-      }
-    } catch (e) {
-      debugPrint('Error fetching route: $e');
-    }
   }
 
   Future<void> _launchNavigation(BuildContext context) async {
@@ -131,16 +74,6 @@ class _ListingDetailScreenState extends State<ListingDetailScreen> {
                     urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
                     userAgentPackageName: 'com.example.kigali_project',
                   ),
-                  if (_routePoints.isNotEmpty)
-                    PolylineLayer(
-                      polylines: [
-                        Polyline(
-                          points: _routePoints,
-                          color: const Color(0xFF1E3A8A),
-                          strokeWidth: 5,
-                        ),
-                      ],
-                    ),
                   MarkerLayer(
                     markers: [
                       // Listing Marker
@@ -154,18 +87,6 @@ class _ListingDetailScreenState extends State<ListingDetailScreen> {
                           size: 50,
                         ),
                       ),
-                      // Current Location Marker
-                      if (_currentPosition != null)
-                        Marker(
-                          width: 40.0,
-                          height: 40.0,
-                          point: LatLng(_currentPosition!.latitude, _currentPosition!.longitude),
-                          child: const Icon(
-                            Icons.my_location,
-                            color: Colors.red,
-                            size: 30,
-                          ),
-                        ),
                     ],
                   ),
                 ],
