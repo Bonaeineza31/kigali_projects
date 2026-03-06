@@ -5,60 +5,106 @@ import 'package:url_launcher/url_launcher.dart';
 import 'package:geolocator/geolocator.dart';
 import '../../models/listing.dart';
 
-class ListingDetailScreen extends StatelessWidget {
+import 'package:http/http.dart' as http;
+import 'dart:convert';
+
+class ListingDetailScreen extends StatefulWidget {
   final Listing listing;
 
   const ListingDetailScreen({super.key, required this.listing});
 
-  Future<void> _launchNavigation(BuildContext context) async {
-    bool serviceEnabled;
-    LocationPermission permission;
+  @override
+  State<ListingDetailScreen> createState() => _ListingDetailScreenState();
+}
 
-    // Test if location services are enabled.
-    serviceEnabled = await Geolocator.isLocationServiceEnabled();
-    if (!serviceEnabled) {
-      if (context.mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Location services are disabled.')),
-        );
-      }
-      return;
-    }
+class _ListingDetailScreenState extends State<ListingDetailScreen> {
+  List<LatLng> _routePoints = [];
+  final MapController _mapController = MapController();
+  Position? _currentPosition;
 
-    permission = await Geolocator.checkPermission();
-    if (permission == LocationPermission.denied) {
-      permission = await Geolocator.requestPermission();
+  @override
+  void initState() {
+    super.initState();
+    _getAndShowRoute();
+  }
+
+  Future<void> _getAndShowRoute() async {
+    try {
+      // 1. Verify Location Services & Permissions (Essential to prevent crashes)
+      bool serviceEnabled = await Geolocator.isLocationServiceEnabled();
+      if (!serviceEnabled) return;
+
+      LocationPermission permission = await Geolocator.checkPermission();
       if (permission == LocationPermission.denied) {
-        if (context.mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Location permissions are denied.')),
+        permission = await Geolocator.requestPermission();
+        if (permission == LocationPermission.denied) return;
+      }
+      
+      if (permission == LocationPermission.deniedForever) return;
+
+      // 2. Get current position
+      _currentPosition = await Geolocator.getCurrentPosition();
+      
+      // 3. Fetch OSRM route
+      final url = Uri.parse(
+        'https://router.project-osrm.org/route/v1/driving/'
+        '${_currentPosition!.longitude},${_currentPosition!.latitude};'
+        '${widget.listing.lng},${widget.listing.lat}'
+        '?overview=full&geometries=geojson'
+      );
+
+      final response = await http.get(url).timeout(const Duration(seconds: 5));
+      if (response.statusCode == 200) {
+        final data = json.decode(response.body);
+        final List coordinates = data['routes'][0]['geometry']['coordinates'];
+        
+        if (mounted) {
+          setState(() {
+            _routePoints = coordinates.map((c) => LatLng(c[1].toDouble(), c[0].toDouble())).toList();
+          });
+        }
+
+        // 4. Update map to show both markers
+        if (_routePoints.isNotEmpty && mounted) {
+           _mapController.fitCamera(
+            CameraFit.bounds(
+              bounds: LatLngBounds.fromPoints([
+                LatLng(_currentPosition!.latitude, _currentPosition!.longitude),
+                LatLng(widget.listing.lat, widget.listing.lng),
+              ]),
+              padding: const EdgeInsets.all(50),
+            ),
           );
         }
-        return;
       }
+    } catch (e) {
+      debugPrint('Error fetching route: $e');
     }
-    
-    if (permission == LocationPermission.deniedForever) {
-      if (context.mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Location permissions are permanently denied.')),
-        );
-      }
-      return;
-    } 
+  }
 
-    // Get current position
-    Position position = await Geolocator.getCurrentPosition();
-    
-    // Construct Google Maps URL with origin and destination
-    final url = 'https://www.google.com/maps/dir/?api=1&origin=${position.latitude},${position.longitude}&destination=${listing.lat},${listing.lng}&travelmode=driving';
-    
-    if (await canLaunchUrl(Uri.parse(url))) {
-      await launchUrl(Uri.parse(url), mode: LaunchMode.externalApplication);
-    } else {
+  Future<void> _launchNavigation(BuildContext context) async {
+    try {
+      // Fetch fresh position right before launching to ensure sync with emulator location
+      Position position = await Geolocator.getCurrentPosition(
+        desiredAccuracy: LocationAccuracy.high,
+      ).timeout(const Duration(seconds: 5));
+
+      final googleMapsUrl = Uri.parse(
+        'https://www.google.com/maps/dir/?api=1&origin=${position.latitude},${position.longitude}&destination=${widget.listing.lat},${widget.listing.lng}&travelmode=driving'
+      );
+
+      final launched = await launchUrl(
+        googleMapsUrl, 
+        mode: LaunchMode.externalApplication,
+      );
+      
+      if (!launched) {
+        throw 'Maps app not available.';
+      }
+    } catch (e) {
       if (context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Could not launch navigation: $url')),
+          SnackBar(content: Text('Navigation error: $e')),
         );
       }
     }
@@ -75,8 +121,9 @@ class ListingDetailScreen extends StatelessWidget {
             pinned: true,
             flexibleSpace: FlexibleSpaceBar(
               background: FlutterMap(
+                mapController: _mapController,
                 options: MapOptions(
-                  initialCenter: LatLng(listing.lat, listing.lng),
+                  initialCenter: LatLng(widget.listing.lat, widget.listing.lng),
                   initialZoom: 15,
                 ),
                 children: [
@@ -84,18 +131,41 @@ class ListingDetailScreen extends StatelessWidget {
                     urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
                     userAgentPackageName: 'com.example.kigali_project',
                   ),
+                  if (_routePoints.isNotEmpty)
+                    PolylineLayer(
+                      polylines: [
+                        Polyline(
+                          points: _routePoints,
+                          color: const Color(0xFF1E3A8A),
+                          strokeWidth: 5,
+                        ),
+                      ],
+                    ),
                   MarkerLayer(
                     markers: [
+                      // Listing Marker
                       Marker(
                         width: 50.0,
                         height: 50.0,
-                        point: LatLng(listing.lat, listing.lng),
+                        point: LatLng(widget.listing.lat, widget.listing.lng),
                         child: const Icon(
                           Icons.location_on,
                           color: Color(0xFF1E3A8A),
                           size: 50,
                         ),
                       ),
+                      // Current Location Marker
+                      if (_currentPosition != null)
+                        Marker(
+                          width: 40.0,
+                          height: 40.0,
+                          point: LatLng(_currentPosition!.latitude, _currentPosition!.longitude),
+                          child: const Icon(
+                            Icons.my_location,
+                            color: Colors.red,
+                            size: 30,
+                          ),
+                        ),
                     ],
                   ),
                 ],
@@ -118,7 +188,7 @@ class ListingDetailScreen extends StatelessWidget {
                           borderRadius: BorderRadius.circular(10),
                         ),
                         child: Text(
-                          listing.category.toUpperCase(),
+                          widget.listing.category.toUpperCase(),
                           style: const TextStyle(
                             color: Color(0xFF1E3A8A),
                             fontWeight: FontWeight.bold,
@@ -131,13 +201,13 @@ class ListingDetailScreen extends StatelessWidget {
                   ),
                   const SizedBox(height: 16),
                   Text(
-                    listing.name,
+                    widget.listing.name,
                     style: const TextStyle(fontSize: 32, fontWeight: FontWeight.bold),
                   ),
                   const SizedBox(height: 20),
-                  _InfoTile(icon: Icons.location_on_outlined, text: listing.address),
+                  _InfoTile(icon: Icons.location_on_outlined, text: widget.listing.address),
                   const SizedBox(height: 12),
-                  _InfoTile(icon: Icons.phone_outlined, text: listing.contact),
+                  _InfoTile(icon: Icons.phone_outlined, text: widget.listing.contact),
                   const SizedBox(height: 32),
                   const Text(
                     'About this place',
@@ -145,7 +215,7 @@ class ListingDetailScreen extends StatelessWidget {
                   ),
                   const SizedBox(height: 12),
                   Text(
-                    listing.description,
+                    widget.listing.description,
                     style: TextStyle(fontSize: 16, height: 1.6, color: Colors.grey[800]),
                   ),
                   const SizedBox(height: 40),
