@@ -16,6 +16,19 @@ class _MapViewScreenState extends State<MapViewScreen> {
   final MapController _mapController = MapController();
   final LatLng _initialPosition = const LatLng(-1.9441, 30.0619); // Kigali
 
+  IconData _getCategoryIcon(String category) {
+    switch (category) {
+      case 'Hospital': return Icons.local_hospital;
+      case 'Restaurant': return Icons.restaurant;
+      case 'Garage': return Icons.build;
+      case 'Café': return Icons.coffee;
+      case 'Park': return Icons.park;
+      case 'Police Station': return Icons.local_police;
+      case 'Library': return Icons.local_library;
+      default: return Icons.location_on;
+    }
+  }
+
   Color _getMarkerColor(String category) {
     switch (category) {
       case 'Hospital': return Colors.red;
@@ -52,8 +65,8 @@ class _MapViewScreenState extends State<MapViewScreen> {
               
               final markers = listings.map((l) {
                 return Marker(
-                  width: 45.0,
-                  height: 45.0,
+                  width: 50.0,
+                  height: 50.0,
                   point: LatLng(l.lat, l.lng),
                   child: GestureDetector(
                     onTap: () {
@@ -76,11 +89,11 @@ class _MapViewScreenState extends State<MapViewScreen> {
                           ),
                         ],
                       ),
-                      padding: const EdgeInsets.all(2),
+                      padding: const EdgeInsets.all(4),
                       child: Icon(
-                        Icons.location_on,
+                        _getCategoryIcon(l.category),
                         color: _getMarkerColor(l.category),
-                        size: 30,
+                        size: 28,
                       ),
                     ),
                   ),
@@ -102,6 +115,30 @@ class _MapViewScreenState extends State<MapViewScreen> {
                 ],
               );
             },
+          ),
+          // Zoom Controls
+          Positioned(
+            right: 16,
+            bottom: 32,
+            child: Column(
+              children: [
+                _ZoomButton(
+                  icon: Icons.add,
+                  onPressed: () {
+                    final zoom = _mapController.camera.zoom + 1;
+                    _mapController.move(_mapController.camera.center, zoom);
+                  },
+                ),
+                const SizedBox(height: 12),
+                _ZoomButton(
+                  icon: Icons.remove,
+                  onPressed: () {
+                    final zoom = _mapController.camera.zoom - 1;
+                    _mapController.move(_mapController.camera.center, zoom);
+                  },
+                ),
+              ],
+            ),
           ),
           // Floated Header with No Background Image
           Positioned(
@@ -136,6 +173,34 @@ class _MapViewScreenState extends State<MapViewScreen> {
             ),
           ),
         ],
+      ),
+    );
+  }
+}
+
+class _ZoomButton extends StatelessWidget {
+  final IconData icon;
+  final VoidCallback onPressed;
+
+  const _ZoomButton({required this.icon, required this.onPressed});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(12),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.1),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: IconButton(
+        icon: Icon(icon, color: const Color(0xFF1E3A8A)),
+        onPressed: onPressed,
       ),
     );
   }

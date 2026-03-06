@@ -5,8 +5,6 @@ import 'package:url_launcher/url_launcher.dart';
 import 'package:geolocator/geolocator.dart';
 import '../../models/listing.dart';
 
-import '../../models/listing.dart';
-
 class ListingDetailScreen extends StatefulWidget {
   final Listing listing;
 
@@ -20,6 +18,19 @@ class _ListingDetailScreenState extends State<ListingDetailScreen> {
   final MapController _mapController = MapController();
   Position? _currentPosition;
 
+  IconData _getCategoryIcon(String category) {
+    switch (category) {
+      case 'Hospital': return Icons.local_hospital;
+      case 'Restaurant': return Icons.restaurant;
+      case 'Garage': return Icons.build;
+      case 'Café': return Icons.coffee;
+      case 'Park': return Icons.park;
+      case 'Police Station': return Icons.local_police;
+      case 'Library': return Icons.local_library;
+      default: return Icons.location_on;
+    }
+  }
+
   @override
   void initState() {
     super.initState();
@@ -27,7 +38,6 @@ class _ListingDetailScreenState extends State<ListingDetailScreen> {
 
   Future<void> _launchNavigation(BuildContext context) async {
     try {
-      // Fetch fresh position right before launching to ensure sync with emulator location
       Position position = await Geolocator.getCurrentPosition(
         desiredAccuracy: LocationAccuracy.high,
       ).timeout(const Duration(seconds: 5));
@@ -63,31 +73,72 @@ class _ListingDetailScreenState extends State<ListingDetailScreen> {
             expandedHeight: 300,
             pinned: true,
             flexibleSpace: FlexibleSpaceBar(
-              background: FlutterMap(
-                mapController: _mapController,
-                options: MapOptions(
-                  initialCenter: LatLng(widget.listing.lat, widget.listing.lng),
-                  initialZoom: 15,
-                ),
+              background: Stack(
                 children: [
-                  TileLayer(
-                    urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
-                    userAgentPackageName: 'com.example.kigali_project',
-                  ),
-                  MarkerLayer(
-                    markers: [
-                      // Listing Marker
-                      Marker(
-                        width: 50.0,
-                        height: 50.0,
-                        point: LatLng(widget.listing.lat, widget.listing.lng),
-                        child: const Icon(
-                          Icons.location_on,
-                          color: Color(0xFF1E3A8A),
-                          size: 50,
-                        ),
+                  FlutterMap(
+                    mapController: _mapController,
+                    options: MapOptions(
+                      initialCenter: LatLng(widget.listing.lat, widget.listing.lng),
+                      initialZoom: 15,
+                    ),
+                    children: [
+                      TileLayer(
+                        urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
+                        userAgentPackageName: 'com.example.kigali_project',
+                      ),
+                      MarkerLayer(
+                        markers: [
+                          Marker(
+                            width: 60.0,
+                            height: 60.0,
+                            point: LatLng(widget.listing.lat, widget.listing.lng),
+                            child: Container(
+                              decoration: BoxDecoration(
+                                color: Colors.white,
+                                shape: BoxShape.circle,
+                                boxShadow: [
+                                  BoxShadow(
+                                    color: Colors.black.withOpacity(0.2),
+                                    blurRadius: 10,
+                                    offset: const Offset(0, 4),
+                                  ),
+                                ],
+                              ),
+                              padding: const EdgeInsets.all(8),
+                              child: Icon(
+                                _getCategoryIcon(widget.listing.category),
+                                color: const Color(0xFF1E3A8A),
+                                size: 35,
+                              ),
+                            ),
+                          ),
+                        ],
                       ),
                     ],
+                  ),
+                  // Zoom Controls
+                  Positioned(
+                    right: 16,
+                    bottom: 16,
+                    child: Column(
+                      children: [
+                        _ZoomButton(
+                          icon: Icons.add,
+                          onPressed: () {
+                            final zoom = _mapController.camera.zoom + 1;
+                            _mapController.move(_mapController.camera.center, zoom);
+                          },
+                        ),
+                        const SizedBox(height: 12),
+                        _ZoomButton(
+                          icon: Icons.remove,
+                          onPressed: () {
+                            final zoom = _mapController.camera.zoom - 1;
+                            _mapController.move(_mapController.camera.center, zoom);
+                          },
+                        ),
+                      ],
+                    ),
                   ),
                 ],
               ),
@@ -162,6 +213,34 @@ class _ListingDetailScreenState extends State<ListingDetailScreen> {
             ),
           ),
         ],
+      ),
+    );
+  }
+}
+
+class _ZoomButton extends StatelessWidget {
+  final IconData icon;
+  final VoidCallback onPressed;
+
+  const _ZoomButton({required this.icon, required this.onPressed});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(12),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.1),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: IconButton(
+        icon: Icon(icon, color: const Color(0xFF1E3A8A)),
+        onPressed: onPressed,
       ),
     );
   }
