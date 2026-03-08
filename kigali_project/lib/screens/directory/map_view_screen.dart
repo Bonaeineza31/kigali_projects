@@ -3,6 +3,8 @@ import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:provider/provider.dart';
 import '../../providers/listing_provider.dart';
+import '../../providers/auth_provider.dart';
+import '../../models/listing.dart';
 import 'listing_detail_screen.dart';
 
 class MapViewScreen extends StatefulWidget {
@@ -16,33 +18,54 @@ class _MapViewScreenState extends State<MapViewScreen> {
   final MapController _mapController = MapController();
   final LatLng _initialPosition = const LatLng(-1.9441, 30.0619); // Kigali
 
+  bool _showAllListings = true;
+
   IconData _getCategoryIcon(String category) {
-    switch (category) {
-      case 'Hospital': return Icons.local_hospital;
-      case 'Restaurant': return Icons.restaurant;
-      case 'Garage': return Icons.build;
-      case 'Café': return Icons.coffee;
-      case 'Park': return Icons.park;
-      case 'Police Station': return Icons.local_police;
-      case 'Library': return Icons.local_library;
-      default: return Icons.location_on;
-    }
+    final cat = category.toLowerCase().trim();
+    if (cat.contains('hospital')) return Icons.local_hospital;
+    if (cat.contains('restaurant')) return Icons.restaurant;
+    if (cat.contains('garage')) return Icons.build;
+    if (cat.contains('café') || cat.contains('cafe')) return Icons.coffee;
+    if (cat.contains('park')) return Icons.park;
+    if (cat.contains('police')) return Icons.local_police;
+    if (cat.contains('library')) return Icons.local_library;
+    if (cat.contains('tourist') || cat.contains('attraction')) return Icons.attractions;
+    if (cat.contains('utility') || cat.contains('office')) return Icons.business;
+    return Icons.location_on;
   }
 
   Color _getMarkerColor(String category) {
-    switch (category) {
-      case 'Hospital': return Colors.red;
-      case 'Restaurant': return Colors.orange;
-      case 'Garage': return Colors.deepPurple;
-      case 'Café': return Colors.brown;
-      case 'Park': return Colors.green;
-      case 'Police Station': return Colors.blue;
-      default: return const Color(0xFF1E3A8A);
-    }
+    final cat = category.toLowerCase().trim();
+    if (cat.contains('hospital')) return Colors.red;
+    if (cat.contains('restaurant')) return Colors.orange;
+    if (cat.contains('garage')) return Colors.deepPurple;
+    if (cat.contains('café') || cat.contains('cafe')) return Colors.brown;
+    if (cat.contains('park')) return Colors.green;
+    if (cat.contains('police')) return Colors.blue;
+    if (cat.contains('tourist')) return Colors.teal;
+    if (cat.contains('utility')) return Colors.blueGrey;
+    return const Color(0xFF1E3A8A);
+  }
+
+  void _fitMapToMarkers(List<Listing> listings) {
+    if (listings.isEmpty) return;
+    
+    final bounds = LatLngBounds.fromPoints(
+      listings.map((l) => LatLng(l.lat, l.lng)).toList(),
+    );
+     _mapController.fitCamera(
+      CameraFit.bounds(
+        bounds: bounds,
+        padding: const EdgeInsets.all(50),
+      ),
+    );
   }
 
   @override
   Widget build(BuildContext context) {
+    final authProvider = Provider.of<AuthProvider>(context, listen: false);
+    final uid = authProvider.user?.uid ?? '';
+
     return Scaffold(
       body: Stack(
         children: [
@@ -61,7 +84,9 @@ class _MapViewScreenState extends State<MapViewScreen> {
                 );
               }
 
-              final listings = provider.listings;
+              final allListings = provider.allListings;
+              final myListings = allListings.where((l) => l.createdBy == uid).toList();
+              final listings = _showAllListings ? allListings : myListings;
               
               final markers = listings.map((l) {
                 return Marker(
@@ -105,6 +130,11 @@ class _MapViewScreenState extends State<MapViewScreen> {
                 options: MapOptions(
                   initialCenter: _initialPosition,
                   initialZoom: 13,
+                  onMapReady: () {
+                    if (listings.isNotEmpty) {
+                      _fitMapToMarkers(listings);
+                    }
+                  }
                 ),
                 children: [
                   TileLayer(
@@ -116,12 +146,32 @@ class _MapViewScreenState extends State<MapViewScreen> {
               );
             },
           ),
-          // Zoom Controls
+          // Map Toggle & Zoom Controls
           Positioned(
             right: 16,
             bottom: 32,
             child: Column(
               children: [
+                _ZoomButton(
+                  icon: _showAllListings ? Icons.group : Icons.person,
+                  onPressed: () {
+                    setState(() {
+                      _showAllListings = !_showAllListings;
+                    });
+                  },
+                ),
+                const SizedBox(height: 12),
+                _ZoomButton(
+                  icon: Icons.filter_center_focus,
+                  onPressed: () {
+                    final provider = Provider.of<ListingProvider>(context, listen: false);
+                    final listings = _showAllListings 
+                      ? provider.allListings 
+                      : provider.allListings.where((l) => l.createdBy == uid).toList();
+                    _fitMapToMarkers(listings);
+                  },
+                ),
+                const SizedBox(height: 12),
                 _ZoomButton(
                   icon: Icons.add,
                   onPressed: () {

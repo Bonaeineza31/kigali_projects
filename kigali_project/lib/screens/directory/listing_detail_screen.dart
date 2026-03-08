@@ -19,16 +19,15 @@ class _ListingDetailScreenState extends State<ListingDetailScreen> {
   Position? _currentPosition;
 
   IconData _getCategoryIcon(String category) {
-    switch (category) {
-      case 'Hospital': return Icons.local_hospital;
-      case 'Restaurant': return Icons.restaurant;
-      case 'Garage': return Icons.build;
-      case 'Café': return Icons.coffee;
-      case 'Park': return Icons.park;
-      case 'Police Station': return Icons.local_police;
-      case 'Library': return Icons.local_library;
-      default: return Icons.location_on;
-    }
+    final cat = category.toLowerCase().trim();
+    if (cat.contains('hospital')) return Icons.local_hospital;
+    if (cat.contains('restaurant')) return Icons.restaurant;
+    if (cat.contains('garage')) return Icons.build;
+    if (cat.contains('café') || cat.contains('cafe')) return Icons.coffee;
+    if (cat.contains('park')) return Icons.park;
+    if (cat.contains('police')) return Icons.local_police;
+    if (cat.contains('library')) return Icons.local_library;
+    return Icons.location_on;
   }
 
   @override

@@ -20,6 +20,7 @@ class ListingProvider with ChangeNotifier {
 
   bool get isLoading => _isLoading;
   String? get errorMessage => _errorMessage;
+  List<Listing> get allListings => _allListings;
 
   void _startListingSubscription() {
     _listingsSubscription?.cancel();
