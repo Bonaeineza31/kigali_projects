@@ -37,26 +37,49 @@ class _ListingDetailScreenState extends State<ListingDetailScreen> {
 
   Future<void> _launchNavigation(BuildContext context) async {
     try {
-      Position position = await Geolocator.getCurrentPosition(
-        desiredAccuracy: LocationAccuracy.high,
-      ).timeout(const Duration(seconds: 5));
-
-      final googleMapsUrl = Uri.parse(
-        'https://www.google.com/maps/dir/?api=1&origin=${position.latitude},${position.longitude}&destination=${widget.listing.lat},${widget.listing.lng}&travelmode=driving'
-      );
-
-      final launched = await launchUrl(
-        googleMapsUrl, 
-        mode: LaunchMode.externalApplication,
-      );
-      
-      if (!launched) {
-        throw 'Maps app not available.';
+      // 1. Check if location services are enabled
+      bool serviceEnabled = await Geolocator.isLocationServiceEnabled();
+      if (!serviceEnabled) {
+        if (context.mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Please enable location services in settings.')),
+          );
+        }
+        return;
       }
+
+      // 2. Check permissions (required for Maps to find "My Location")
+      LocationPermission permission = await Geolocator.checkPermission();
+      if (permission == LocationPermission.denied) {
+        permission = await Geolocator.requestPermission();
+        if (permission == LocationPermission.denied) {
+          if (context.mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(content: Text('Location permissions are denied.')),
+            );
+          }
+          return;
+        }
+      }
+
+      // 3. Prepare Universal Navigation URL
+      // We use the "dir" (directions) API without the "google.navigation" intent.
+      // This shows the route overview first and allows the user to click "Start".
+      final googleMapsUrl = Uri.parse(
+        'https://www.google.com/maps/dir/?api=1&destination=${widget.listing.lat},${widget.listing.lng}'
+      );
+
+      // 4. Attempt to launch
+      if (await canLaunchUrl(googleMapsUrl)) {
+        await launchUrl(googleMapsUrl, mode: LaunchMode.externalApplication);
+      } else {
+        throw 'Could not launch Google Maps.';
+      }
+
     } catch (e) {
       if (context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Navigation error: $e')),
+          SnackBar(content: Text('Navigation error: ${e.toString()}')),
         );
       }
     }
