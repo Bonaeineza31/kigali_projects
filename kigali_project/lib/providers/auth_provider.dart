@@ -19,11 +19,15 @@ class AuthProvider with ChangeNotifier {
 
   AuthProvider() {
     _authService.user.listen((User? user) async {
-      _user = user;
-      if (user != null) {
-        _appUser = await _firestoreService.getUserProfile(user.uid);
-      } else {
-        _appUser = null;
+      try {
+        _user = user;
+        if (user != null) {
+          _appUser = await _firestoreService.getUserProfile(user.uid);
+        } else {
+          _appUser = null;
+        }
+      } catch (e) {
+        debugPrint('Auth initialization error: $e');
       }
       notifyListeners();
     });

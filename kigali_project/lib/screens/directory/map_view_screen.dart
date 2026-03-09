@@ -48,17 +48,22 @@ class _MapViewScreenState extends State<MapViewScreen> {
   }
 
   void _fitMapToMarkers(List<Listing> listings) {
-    if (listings.isEmpty) return;
+    if (listings.isEmpty || !mounted) return;
     
-    final bounds = LatLngBounds.fromPoints(
-      listings.map((l) => LatLng(l.lat, l.lng)).toList(),
-    );
-     _mapController.fitCamera(
-      CameraFit.bounds(
-        bounds: bounds,
-        padding: const EdgeInsets.all(50),
-      ),
-    );
+    try {
+      final points = listings.map((l) => LatLng(l.lat, l.lng)).toList();
+      final bounds = LatLngBounds.fromPoints(points);
+      
+      _mapController.fitCamera(
+        CameraFit.bounds(
+          bounds: bounds,
+          padding: const EdgeInsets.all(70),
+          maxZoom: 15,
+        ),
+      );
+    } catch (e) {
+      debugPrint('Error fitting map to markers: $e');
+    }
   }
 
   @override
@@ -148,11 +153,12 @@ class _MapViewScreenState extends State<MapViewScreen> {
           ),
           // Map Toggle & Zoom Controls
           Positioned(
-            right: 16,
+            left: 16,
             bottom: 32,
             child: Column(
               children: [
                 _ZoomButton(
+                  tooltip: _showAllListings ? 'Show My Listings' : 'Show All Listings',
                   icon: _showAllListings ? Icons.group : Icons.person,
                   onPressed: () {
                     setState(() {
@@ -162,6 +168,7 @@ class _MapViewScreenState extends State<MapViewScreen> {
                 ),
                 const SizedBox(height: 12),
                 _ZoomButton(
+                  tooltip: 'Center on Listings',
                   icon: Icons.filter_center_focus,
                   onPressed: () {
                     final provider = Provider.of<ListingProvider>(context, listen: false);
@@ -173,6 +180,7 @@ class _MapViewScreenState extends State<MapViewScreen> {
                 ),
                 const SizedBox(height: 12),
                 _ZoomButton(
+                  tooltip: 'Zoom In',
                   icon: Icons.add,
                   onPressed: () {
                     final zoom = _mapController.camera.zoom + 1;
@@ -181,6 +189,7 @@ class _MapViewScreenState extends State<MapViewScreen> {
                 ),
                 const SizedBox(height: 12),
                 _ZoomButton(
+                  tooltip: 'Zoom Out',
                   icon: Icons.remove,
                   onPressed: () {
                     final zoom = _mapController.camera.zoom - 1;
@@ -231,8 +240,13 @@ class _MapViewScreenState extends State<MapViewScreen> {
 class _ZoomButton extends StatelessWidget {
   final IconData icon;
   final VoidCallback onPressed;
+  final String tooltip;
 
-  const _ZoomButton({required this.icon, required this.onPressed});
+  const _ZoomButton({
+    required this.icon,
+    required this.onPressed,
+    required this.tooltip,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -249,6 +263,7 @@ class _ZoomButton extends StatelessWidget {
         ],
       ),
       child: IconButton(
+        tooltip: tooltip,
         icon: Icon(icon, color: const Color(0xFF1E3A8A)),
         onPressed: onPressed,
       ),

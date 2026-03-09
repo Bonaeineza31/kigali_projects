@@ -288,7 +288,10 @@ class _LoginScreenState extends State<LoginScreen> {
 
     if (!success && mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Action failed. Please check your credentials.')),
+        const SnackBar(
+          content: Text('Login failed. Please check your internet connection or credentials.'),
+          backgroundColor: Colors.red,
+        ),
       );
     }
   }
