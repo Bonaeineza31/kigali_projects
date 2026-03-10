@@ -49,10 +49,11 @@ The project follows a **Clean Architecture** pattern, separating the UI from bus
 
 ##  Setup Instructions
 1. Clone the repository.
-2. Ensure Flutter is installed.
-3. Add your proprietary `.env` file with Firebase configuration.
-4. Run `flutter pub get`.
-5. Run on an emulator or physical device using `flutter run`.
+2. cd kigali_project
+3. Ensure Flutter is installed.
+4. Add your proprietary `.env` file with Firebase configuration.
+5. Run `flutter pub get`.
+6. Run on an emulator or physical device using `flutter run`.
 
 ## Navigation
 
