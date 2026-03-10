@@ -22,7 +22,7 @@ This project follows **Clean Architecture** principles with a clear separation o
 - **Widgets**: Reusable UI components like `ListingCard`.
 
 ## Firebase Setup
-# Kigali City Services & Places Directory
+### Kigali City Services & Places Directory
 
 A fully functional mobile application built with Flutter and Firebase to help Kigali residents locate and navigate to essential public services and leisure locations.
 
