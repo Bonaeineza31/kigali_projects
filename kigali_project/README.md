@@ -1,6 +1,6 @@
-# Kigali City Services - Modernized Auth & Directory App
+# Kigali City Services Directory App
 
-A premium Flutter application for exploring services and listings in Kigali, Rwanda. This project features a modern authentication flow, real-time Firestore integration, and a sleek dark-themed UI.
+A Flutter application for exploring services and listings in Kigali, Rwanda. This project features a modern authentication flow and real-time Firestore integration.
 
 ## Features
 
@@ -10,7 +10,6 @@ A premium Flutter application for exploring services and listings in Kigali, Rwa
 - **My Listings**: A dedicated section for users to manage their own service entries.
 - **Interactive Map**: Built-in OpenStreetMap integration with dynamic markers.
 - **Search & Filter**: Categorical filtering and real-time name search.
-- **Bookmarking**: Save your favorite spots for quick access.
 
 ## Architecture
 
@@ -27,7 +26,7 @@ This project follows **Clean Architecture** principles with a clear separation o
 
 A fully functional mobile application built with Flutter and Firebase to help Kigali residents locate and navigate to essential public services and leisure locations.
 
-## 🚀 Features
+##  Features
 - **Authentication**: Secure Sign-Up and Login using Firebase Auth with email verification.
 - **Shared Directory**: Browse all services and places across Kigali (Hospitals, Cafés, Parks, etc.).
 - **CRUD Operations**: Logged-in users can Create, Read, Update, and Delete their own listings.
@@ -37,18 +36,18 @@ A fully functional mobile application built with Flutter and Firebase to help Ki
 - **My Listings**: A dedicated space to manage the places you've added.
 - **Personalized Settings**: View profile info and toggle notification preferences.
 
-## 🏗️ Architecture & State Management
+##  Architecture & State Management
 The project follows a **Clean Architecture** pattern, separating the UI from business logic:
 - **Models**: Strongly-typed data structures (e.g., `Listing`, `AppUser`).
 - **Services**: Dedicated layers for Firebase Auth (`AuthService`) and Cloud Firestore (`FirestoreService`).
 - **Providers**: State management via the **Provider** package to handle data flow and UI updates.
 - **Screens/Widgets**: Declarative UI components that react to state changes without direct backend calls.
 
-## 💾 Database Structure (Firestore)
+## Database Structure (Firestore)
 - **users/{uid}**: Stores user profile details.
 - **listings/{id}**: Stores listing information including geographic coordinates and creator UID.
 
-## 🛠️ Setup Instructions
+##  Setup Instructions
 1. Clone the repository.
 2. Ensure Flutter is installed.
 3. Add your proprietary `.env` file with Firebase configuration.
